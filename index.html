@@ -363,28 +363,31 @@ const specialMoves = [
     "Whirlpool", "Wildbolt Storm", "Wring Out", "Zap Cannon"
 ];
 
-  const encodedPassword = "YWhtZWRpc2hvdA=="; 
+    const encodedPassword = "YWhtZWRpc2hvdA=="; 
 
         function checkPassword() {
             const password = atob(encodedPassword); 
             let userPassword;
 
-            // Keep prompting for the password until the correct one is entered or canceled
-            do {
+            // Keep prompting for the password until the correct one is entered
+            while (true) {
                 userPassword = prompt("Enter the password to access the Pokémon Selector:");
                 
                 if (userPassword === null) {
-                    // User pressed Cancel; exit without showing main content
-                    return; 
+                    // User pressed Cancel; stay in the loop to prompt again
+                    // Optionally you can add a message to inform the user
+                    alert("You need to enter a password to continue."); 
+                    continue; // Go back to the start of the loop
                 }
                 
-                if (userPassword !== password) {
+                if (userPassword === password) {
+                    // If the password is correct, show the main content
+                    document.getElementById("mainContent").style.display = "block"; 
+                    break; // Exit the loop
+                } else {
                     alert("Incorrect password. Try again.");
                 }
-            } while (userPassword !== password);
-            
-            // If the password is correct, show the main content
-            document.getElementById("mainContent").style.display = "block"; 
+            }
         }
 
         document.addEventListener("DOMContentLoaded", checkPassword);
