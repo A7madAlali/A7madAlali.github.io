@@ -364,20 +364,26 @@ const specialMoves = [
 ];
 
 const encodedPassword = "YWhtZWRpc2hvdA=="; 
+
         function checkPassword() {
             const password = atob(encodedPassword); 
-            
             let userPassword = prompt("Enter the password to access the Pokémon Selector:");
+            
+            if (userPassword === null) {
+            
+                return; 
+            }
+            
             if (userPassword === password) {
-                document.getElementById("mainContent").style.display = "block"; 
+                document.getElementById("mainContent").style.display = "block"; /
             } else {
                 alert("Incorrect password. Access denied.");
-                window.location.reload(); 
+               
+                checkPassword(); // Re-prompt for the password
             }
         }
 
         document.addEventListener("DOMContentLoaded", checkPassword);
-
 
         document.getElementById('fileInput1').addEventListener('change', handleFileSelect, false);
         document.getElementById('fileInput2').addEventListener('change', handleFileSelect, false);
