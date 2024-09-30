@@ -363,27 +363,31 @@ const specialMoves = [
     "Whirlpool", "Wildbolt Storm", "Wring Out", "Zap Cannon"
 ];
 
-const encodedPassword = "YWhtZWRpc2hvdA=="; 
+   const encodedPassword = "YWhtZWRpc2hvdA=="; 
 
         function checkPassword() {
             const password = atob(encodedPassword); 
-            let userPassword = prompt("Enter the password to access the Pokémon Selector:");
+            let userPassword;
+
+            // Keep prompting for the password until the correct one is entered or canceled
+            do {
+                userPassword = prompt("Enter the password to access the Pokémon Selector:");
+                
+                if (userPassword === null) {
+                    // User pressed Cancel; exit without showing main content
+                    return; 
+                }
+                
+                if (userPassword !== password) {
+                    alert("Incorrect password. Try again.");
+                }
+            } while (userPassword !== password);
             
-            if (userPassword === null) {
-            
-                return; 
-            }
-            
-            if (userPassword === password) {
-                document.getElementById("mainContent").style.display = "block"; /
-            } else {
-                alert("Incorrect password. Access denied.");
-               
-                checkPassword(); // Re-prompt for the password
-            }
+            // If the password is correct, show the main content
+            document.getElementById("mainContent").style.display = "block"; 
         }
 
-        document.addEventListener("DOMContentLoaded", checkPassword);
+        document.addEventListener("DOMContentLoaded", checkPassword); //
 
         document.getElementById('fileInput1').addEventListener('change', handleFileSelect, false);
         document.getElementById('fileInput2').addEventListener('change', handleFileSelect, false);
