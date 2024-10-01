@@ -1,1 +1,591 @@
-<!DOCTYPE html><html lang="en"><head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>Random Pokémon Selector</title> <style>#mainContent{display: none;}body{font-family: Arial, sans-serif; margin: 20px; text-align: center;}h1{text-align: center; color: #333;}.pokemon-grid{display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; justify-content: center; max-width: 900px; margin: 0 auto;}.pokemon-item{border: 1px solid #ccc; padding: 10px; border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); background-color: #f9f9f9;}.pokemon-item strong{font-size: 20px;}.pokemon-details{margin-top: 10px; font-size: 14px;}button{background-color: #4CAF50; color: white; padding: 10px 20px; font-size: 16px; border: none; border-radius: 25px; cursor: pointer; box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2); transition: background-color 0.3s ease, box-shadow 0.3s ease; margin-bottom: 20px;}button:hover{background-color: #45a049; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);}input[type="file"]{display: none;}.custom-file-label{background-color: #008CBA; color: white; padding: 10px 20px; font-size: 16px; border: none; border-radius: 25px; cursor: pointer; box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2); transition: background-color 0.3s ease, box-shadow 0.3s ease;}.custom-file-label:hover{background-color: #007B9A; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);}.file-input-wrapper{margin-bottom: 20px;}textarea{width: 100%; height: 200px; margin-top: 20px; font-size: 14px; border: 1px solid #ccc; padding: 10px; border-radius: 5px; background-color: #f9f9f9; resize: none;}</style></head><body> <h1>Random Pokémon Selector</h1> <div class="file-input-wrapper"> <label class="custom-file-label" for="fileInput1">Upload Pokémon Data 1</label> <input type="file" id="fileInput1" accept=".json"> </div><div class="file-input-wrapper"> <label class="custom-file-label" for="fileInput2">Upload Pokémon Data 2</label> <input type="file" id="fileInput2" accept=".json"> </div><button onclick="selectRandomPokemon()">Select 6 Random Pokémon</button> <button onclick="convertToShowdown()">Convert to Pokémon Showdown Format</button> <div id="pokemonList" class="pokemon-grid"></div><textarea id="showdownText" readonly></textarea> <script>let pokemonData={}; let selectedPokemon=[]; let shinyStatus=[]; const restrictedMoves=[ "Acid Armor", "Acupressure", "After You", "Agility", "Ally Switch", "Amnesia", "Aqua Ring", "Aromatherapy", "Aromatic Mist", "Assist", "Attract", "Aurora Veil", "Autotomize", "Baby-Doll Eyes", "Baneful Bunker", "Barrier", "Baton Pass", "Belly Drum", "Bestow", "Block", "Bulk Up", "Burning Bulwark", "Calm Mind", "Camouflage", "Captivate", "Celebrate", "Charge", "Charm", "Chilly Reception", "Clangorous Soul", "Coaching", "Coil", "Confide", "Confuse Ray", "Conversion", "Conversion 2", "Copycat", "Corrosive Gas", "Cosmic Power", "Cotton Guard", "Cotton Spore", "Court Change", "Crafty Shield", "Curse", "Dark Void", "Decorate", "Defend Order", "Defense Curl", "Defog", "Detect", "Disable", "Doodle", "Double Team", "Dragon Cheer", "Dragon Dance", "Eerie Impulse", "Electric Terrain", "Electrify", "Embargo", "Encore", "Endure", "Entrainment", "Excavate", "Extreme Evoboost", "Fairy Lock", "Fake Tears", "Feather Dance", "Fillet Away", "Flash", "Flatter", "Floral Healing", "Flower Shield", "Focus Energy", "Follow Me", "Foresight", "Forest's Curse", "Gastro Acid", "Gear Up", "Geomancy", "Glare", "Grass Whistle", "Grassy Terrain", "Gravity", "Growl", "Growth", "Grudge", "Guard Split", "Guard Swap", "Hail", "Happy Hour", "Harden", "Haze", "Heal Bell", "Heal Block", "Heal Order", "Heal Pulse", "Healing Wish", "Heart Swap", "Helping Hand", "Hold Hands", "Hone Claws", "Howl", "Hypnosis", "Imprison", "Ingrain", "Instruct", "Ion Deluge", "Iron Defense", "Jungle Healing", "Kinesis", "King's Shield", "Laser Focus", "Leech Seed", "Leer", "Life Dew", "Light Screen", "Lock-On", "Lovely Kiss", "Lucky Chant", "Lunar Blessing", "Lunar Dance", "Magic Coat", "Magic Powder", "Magic Room", "Magnet Rise", "Magnetic Flux", "Mat Block", "Max Guard", "Max Spirit", "Me First", "Mean Look", "Meditate", "Memento", "Metal Sound", "Metronome", "Milk Drink", "Mimic", "Mind Reader", "Minimize", "Miracle Eye", "Mirror Move", "Mist", "Misty Terrain", "Moonlight", "Morning Sun", "Mud Sport", "Nasty Plot", "Nature Power", "Nightmare", "No Retreat", "Noble Roar", "Obstruct", "Octolock", "Odor Sleuth", "Pain Split", "Parting Shot", "Perish Song", "Play Nice", "Poison Gas", "Poison Powder", "Powder", "Power Shift", "Power Split", "Power Swap", "Power Trick", "Protect", "Psych Up", "Psychic Terrain", "Psycho Shift", "Purify", "Quash", "Quick Guard", "Quiver Dance", "Rage Powder", "Rain Dance", "Recover", "Recycle", "Reflect", "Reflect Type", "Refresh", "Rest", "Revival Blessing", "Roar", "Rock Polish", "Role Play", "Roost", "Rototiller", "Safeguard", "Sand Attack", "Sandstorm", "Scary Face", "Screech", "Shadow Down", "Shadow Half", "Shadow Hold", "Shadow Mist", "Shadow Panic", "Shadow Shed", "Shadow Sky", "Sharpen", "Shed Tail", "Shell Smash", "Shelter", "Shift Gear", "Shore Up", "Silk Trap", "Simple Beam", "Sing", "Sketch", "Skill Swap", "Slack Off", "Sleep Powder", "Sleep Talk", "Smokescreen", "Snatch", "Snowscape", "Soak", "Soft-Boiled", "Speed Swap", "Spicy Extract", "Spider Web", "Spikes", "Spiky Shield", "Spite", "Splash", "Spore", "Spotlight", "Stealth Rock", "Sticky Web", "Stockpile", "Strength Sap", "String Shot", "Stuff Cheeks", "Stun Spore", "Substitute", "Sunny Day", "Supersonic", "Swagger", "Swallow", "Sweet Kiss", "Sweet Scent", "Swords Dance", "Synthesis", "Tail Glow", "Tail Whip", "Tailwind", "Take Heart", "Tar Shot", "Taunt", "Tearful Look", "Teatime", "Teeter Dance", "Telekinesis", "Teleport", "Thunder Wave", "Tickle", "Tidy Up", "Topsy-Turvy", "Torment", "Toxic", "Toxic Spikes", "Toxic Thread", "Transform", "Trick", "Trick Room", "Trick-or-Treat", "Venom Drench", "Victory Dance", "Water Sport", "Whirlwind", "Wide Guard", "Will-O-Wisp", "Wish", "Withdraw", "Wonder Room", "Work Up", "Worry Seed", "Yawn"]; const restrictedItems=["Choice Specs", "Choice Band", "Choice Scarf", "Assault Vest"]; const physicalMoves=[ "Accelerock", "Acrobatics", "Aerial Ace", "Anchor Shot", "Aqua Cutter", "Aqua Jet", "Aqua Step", "Aqua Tail", "Arm Thrust", "Assurance", "Astonish", "Attack Order", "Aura Wheel", "Avalanche", "Axe Kick", "Barb Barrage", "Barrage", "Beak Blast", "Beat Up", "Behemoth Bash", "Behemoth Blade", "Bide", "Bind", "Bite", "Bitter Blade", "Blaze Kick", "Blazing Torque", "Body Press", "Body Slam", "Bolt Beak", "Bolt Strike", "Bone Club", "Bone Rush", "Bonemerang", "Bounce", "Branch Poke", "Brave Bird", "Breaking Swipe", "Brick Break", "Brutal Swing", "Bug Bite", "Bulldoze", "Bullet Punch", "Bullet Seed", "Catastropika", "Ceaseless Edge", "Chip Away", "Circle Throw", "Clamp", "Close Combat", "Collision Course", "Combat Torque", "Comet Punch", "Comeuppance", "Constrict", "Counter", "Covet", "Crabhammer", "Cross Chop", "Cross Poison", "Crunch", "Crush Claw", "Crush Grip", "Cut", "Darkest Lariat", "Diamond Storm", "Dig", "Dire Claw", "Dive", "Dizzy Punch", "Double Hit", "Double Iron Bash", "Double Kick", "Double Shock", "Double Slap", "Double-Edge", "Dragon Ascent", "Dragon Claw", "Dragon Darts", "Dragon Hammer", "Dragon Rush", "Dragon Tail", "Drain Punch", "Drill Peck", "Drill Run", "Drum Beating", "Dual Chop", "Dual Wingbeat", "Dynamic Punch", "Earthquake", "Egg Bomb", "Endeavor", "Explosion", "Extreme Speed", "Facade", "Fake Out", "False Surrender", "False Swipe", "Feint", "Feint Attack", "Fell Stinger", "Fire Fang", "Fire Lash", "Fire Punch", "First Impression", "Fishious Rend", "Fissure", "Flail", "Flame Charge", "Flame Wheel", "Flare Blitz", "Fling", "Flip Turn", "Floaty Fall", "Flower Trick", "Fly", "Flying Press", "Focus Punch", "Force Palm", "Foul Play", "Freeze Shock", "Frustration", "Fury Attack", "Fury Cutter", "Fury Swipes", "Fusion Bolt", "Gear Grind", "Giga Impact", "Gigaton Hammer", "Glacial Lance", "Glaive Rush", "Grassy Glide", "Grav Apple", "Guillotine", "Gunk Shot", "Gyro Ball", "Hammer Arm", "Hard Press", "Head Charge", "Head Smash", "Headbutt", "Headlong Rush", "Heart Stamp", "Heat Crash", "Heavy Slam", "High Horsepower", "High Jump Kick", "Hold Back", "Horn Attack", "Horn Drill", "Horn Leech", "Hyper Drill", "Hyper Fang", "Hyperspace Fury", "Ice Ball", "Ice Fang", "Ice Hammer", "Ice Punch", "Ice Shard", "Ice Spinner", "Icicle Crash", "Icicle Spear", "Iron Head", "Iron Tail", "Ivy Cudgel", "Jaw Lock", "Jet Punch", "Jump Kick", "Karate Chop", "Knock Off", "Kowtow Cleave", "Land's Wrath", "Lash Out", "Last Resort", "Last Respects", "Leaf Blade", "Leafage", "Leech Life", "Let's Snuggle Forever", "Lick", "Liquidation", "Low Kick", "Low Sweep", "Lunge", "Mach Punch", "Magical Torque", "Magnet Bomb", "Magnitude", "Malicious Moonsault", "Mega Kick", "Mega Punch", "Megahorn", "Metal Burst", "Metal Claw", "Meteor Assault", "Meteor Mash", "Mighty Cleave", "Mortal Spin", "Mountain Gale", "Multi-Attack", "Natural Gift", "Needle Arm", "Night Slash", "Noxious Torque", "Nuzzle", "Order Up", "Outrage", "Pay Day", "Payback", "Peck", "Petal Blizzard", "Phantom Force", "Pin Missile", "Plasma Fists", "Play Rough", "Pluck", "Poison Fang", "Poison Jab", "Poison Sting", "Poison Tail", "Poltergeist", "Population Bomb", "Pounce", "Pound", "Power Trip", "Power Whip", "Power-Up Punch", "Precipice Blades", "Present", "Psyblade", "Psychic Fangs", "Psycho Cut", "Psyshield Bash", "Pulverizing Pancake", "Punishment", "Pursuit", "Pyro Ball", "Quick Attack", "Rage", "Rage Fist", "Raging Bull", "Raging Fury", "Rapid Spin", "Razor Leaf", "Razor Shell", "Retaliate", "Return", "Revenge", "Reversal", "Rock Blast", "Rock Climb", "Rock Slide", "Rock Smash", "Rock Throw", "Rock Tomb", "Rock Wrecker", "Rolling Kick", "Rollout", "Sacred Fire", "Sacred Sword", "Salt Cure", "Sand Tomb", "Sappy Seed", "Scale Shot", "Scratch", "Searing Sunraze Smash", "Secret Power", "Seed Bomb", "Seismic Toss", "Self-Destruct", "Shadow Blast", "Shadow Blitz", "Shadow Bone", "Shadow Break", "Shadow Claw", "Shadow End", "Shadow Force", "Shadow Punch", "Shadow Rush", "Shadow Sneak", "Sinister Arrow Raid", "Sizzly Slide", "Skitter Smack", "Skull Bash", "Sky Attack", "Sky Drop", "Sky Uppercut", "Slam", "Slash", "Smack Down", "Smart Strike", "Smelling Salts", "Snap Trap", "Solar Blade", "Soul-Stealing 7-Star Strike", "Spark", "Spectral Thief", "Spike Cannon", "Spin Out", "Spin Slash", "Spirit Break", "Spirit Shackle", "Splintered Stormshards", "Steamroller", "Steel Roller", "Steel Wing", "Stomp", "Stomping Tantrum", "Stone Axe", "Stone Edge", "Storm Throw", "Strength", "Struggle", "Submission", "Sucker Punch", "Sunsteel Strike", "Super Fang", "Supercell Slam", "Superpower", "Surging Strikes", "Tackle", "Tail Slap", "Take Down", "Temper Flare", "Thief", "Thousand Arrows", "Thousand Waves", "Thrash", "Throat Chop", "Thunder Fang", "Thunder Punch", "Thunderous Kick", "Trailblaze", "Triple Arrows", "Triple Axel", "Triple Dive", "Triple Kick", "Trop Kick", "Twineedle", "U-turn", "Upper Hand", "V-create", "Veevee Volley", "Vine Whip", "Vise Grip", "Vital Throw", "Volt Tackle", "Wake-Up Slap", "Waterfall", "Wave Crash", "Wicked Blow", "Wicked Torque", "Wide Slash", "Wild Charge", "Wing Attack", "Wood Hammer", "Wrap", "X-Scissor", "Zen Headbutt", "Zing Zap", "Zippy Zap"];const specialMoves=[ "10,000,000 Volt Thunderbolt", "Absorb", "Acid", "Acid Spray", "Aeroblast", "Air Cutter", "Air Slash", "Alluring Voice", "Ancient Power", "Apple Acid", "Armor Cannon", "Astral Barrage", "Aura Sphere", "Aurora Beam", "Baddy Bad", "Belch", "Bitter Malice", "Blast Burn", "Bleakwind Storm", "Blizzard", "Blood Moon", "Blue Flare", "Boomburst", "Bouncy Bubble", "Brine", "Bubble", "Bubble Beam", "Bug Buzz", "Burn Up", "Burning Jealousy", "Buzzy Buzz", "Charge Beam", "Chatter", "Chilling Water", "Chloroblast", "Clanging Scales", "Clangorous Soulblaze", "Clear Smog", "Confusion", "Core Enforcer", "Dark Pulse", "Dazzling Gleam", "Disarming Voice", "Discharge", "Doom Desire", "Draco Meteor", "Dragon Breath", "Dragon Energy", "Dragon Pulse", "Dragon Rage", "Draining Kiss", "Dream Eater", "Dynamax Cannon", "Earth Power", "Echoed Voice", "Eerie Spell", "Electro Ball", "Electro Drift", "Electro Shot", "Electroweb", "Ember", "Energy Ball", "Eruption", "Esper Wing", "Eternabeam", "Expanding Force", "Extrasensory", "Fairy Wind", "Fickle Beam", "Fiery Dance", "Fiery Wrath", "Final Gambit", "Fire Blast", "Fire Pledge", "Fire Spin", "Flame Burst", "Flamethrower", "Flash Cannon", "Fleur Cannon", "Focus Blast", "Freeze-Dry", "Freezing Glare", "Freezy Frost", "Frenzy Plant", "Frost Breath", "Fusion Flare", "Future Sight", "Genesis Supernova", "Giga Drain", "Glaciate", "Glitzy Glow", "Grass Knot", "Grass Pledge", "Guardian of Alola", "Gust", "Heat Wave", "Hex", "Hidden Power", "Hurricane", "Hydro Cannon", "Hydro Pump", "Hydro Steam", "Hyper Beam", "Hyper Voice", "Hyperspace Hole", "Ice Beam", "Ice Burn", "Icy Wind", "Incinerate", "Infernal Parade", "Inferno", "Infestation", "Judgment", "Lava Plume", "Leaf Storm", "Leaf Tornado", "Light of Ruin", "Light That Burns the Sky", "Lumina Crash", "Luster Purge", "Magical Leaf", "Magma Storm", "Make It Rain", "Malignant Chain", "Matcha Gotcha", "Mega Drain", "Menacing Moonraze Maelstrom", "Meteor Beam", "Mind Blown", "Mirror Coat", "Mirror Shot", "Mist Ball", "Misty Explosion", "Moonblast", "Moongeist Beam", "Mud Bomb", "Mud Shot", "Mud-Slap", "Muddy Water", "Mystical Fire", "Mystical Power", "Nature's Madness", "Night Daze", "Night Shade", "Oblivion Wing", "Oceanic Operetta", "Octazooka", "Ominous Wind", "Origin Pulse", "Overdrive", "Overheat", "Parabolic Charge", "Petal Dance", "Photon Geyser", "Pika Papow", "Pollen Puff", "Powder Snow", "Power Gem", "Prismatic Laser", "Psybeam", "Psychic", "Psychic Noise", "Psycho Boost", "Psyshock", "Psystrike", "Psywave", "Razor Wind", "Relic Song", "Revelation Dance", "Rising Voltage", "Roar of Time", "Round", "Ruination", "Sandsear Storm", "Scald", "Scorching Sands", "Searing Shot", "Secret Sword", "Seed Flare", "Shadow Ball", "Shadow Bolt", "Shadow Chill", "Shadow Fire", "Shadow Rave", "Shadow Storm", "Shadow Wave", "Sheer Cold", "Shell Side Arm", "Shell Trap", "Shock Wave", "Signal Beam", "Silver Wind", "Sludge", "Sludge Bomb", "Sludge Wave", "Smog", "Snarl", "Snipe Shot", "Snore", "Solar Beam", "Sonic Boom", "Spacial Rend", "Sparkling Aria", "Sparkly Swirl", "Spit Up", "Splishy Splash", "Springtide Storm", "Steam Eruption", "Steel Beam", "Stoked Sparksurfer", "Stored Power", "Strange Steam", "Struggle Bug", "Surf", "Swift", "Synchronoise", "Syrup Bomb", "Tachyon Cutter", "Techno Blast", "Tera Blast", "Tera Starstorm", "Terrain Pulse", "Thunder", "Thunder Cage", "Thunder Shock", "Thunderbolt", "Thunderclap", "Torch Song", "Tri Attack", "Trump Card", "Twin Beam", "Twister", "Uproar", "Vacuum Wave", "Vacuum-Cut", "Venoshock", "Volt Switch", "Water Gun", "Water Pledge", "Water Pulse", "Water Shuriken", "Water Spout", "Weather Ball", "Whirlpool", "Wildbolt Storm", "Wring Out", "Zap Cannon"]; const encodedPassword="YWhtZWRpc2hvdA=="; function checkPassword(){const password=atob(encodedPassword); let userPassword; // Keep prompting for the password until the correct one is entered while (true){userPassword=prompt("Enter the password to access the Pokémon Selector:"); if (userPassword===null){// User pressed Cancel; stay in the loop to prompt again // Optionally you can add a message to inform the user alert("You need to enter a password to continue."); continue; // Go back to the start of the loop}if (userPassword===password){// If the password is correct, show the main content document.getElementById("mainContent").style.display="block"; break; // Exit the loop}else{alert("Incorrect password. Try again.");}}}document.addEventListener("DOMContentLoaded", checkPassword); document.getElementById('fileInput1').addEventListener('change', handleFileSelect, false); document.getElementById('fileInput2').addEventListener('change', handleFileSelect, false);function handleFileSelect(event){const file=event.target.files[0]; const reader=new FileReader(); reader.onload=function(e){const jsonData=JSON.parse(e.target.result); if (event.target.id==='fileInput1' || event.target.id==='fileInput2'){Object.assign(pokemonData, jsonData); for (const pokemonName in jsonData){if (pokemonData[pokemonName]){const randbatsSet=jsonData[pokemonName]; if (randbatsSet.items){pokemonData[pokemonName].items=randbatsSet.items;}}}}}; reader.readAsText(file);}function hasRestrictedMove(moves){return moves.some(move=> restrictedMoves.includes(move));}function shouldSkipPokemon(pokemonInfo){return pokemonInfo.doublesLevel || pokemonInfo.doublesMoves;}function selectRandomFromArray(arr, n){let result=[]; let usedIndices=new Set(); while (result.length < n && usedIndices.size < arr.length){const randomIndex=Math.floor(Math.random() * arr.length); if (!usedIndices.has(randomIndex)){result.push(arr[randomIndex]); usedIndices.add(randomIndex);}}return result;}function isShiny(){return Math.random() < 1 / 2000;}function filterPhysicalMoves(pokemonMoves, item){if (item==="Choice Band"){return pokemonMoves.filter(move=> physicalMoves.includes(move));}return pokemonMoves;}function filterSpecialMoves(pokemonMoves, item){if (item==="Choice Specs"){return pokemonMoves.filter(move=> specialMoves.includes(move));}return pokemonMoves;}function selectRandomPokemon(){const pokemonKeys=Object.keys(pokemonData); if (pokemonKeys.length < 6){alert("Please upload all required files and ensure they have sufficient Pokémon data."); return;}selectedPokemon=[]; shinyStatus=[]; const pokemonList=document.getElementById('pokemonList'); pokemonList.innerHTML=''; while (selectedPokemon.length < 6){const randomIndex=Math.floor(Math.random() * pokemonKeys.length); const randomPokemon=pokemonKeys[randomIndex]; const pokemonInfo=pokemonData[randomPokemon]; if (!selectedPokemon.includes(randomPokemon) && !shouldSkipPokemon(pokemonInfo)){selectedPokemon.push(randomPokemon); shinyStatus.push(isShiny());}}selectedPokemon.forEach((pokemon, index)=>{const pokemonInfo=pokemonData[pokemon]; let pokemonName=pokemon; if (shinyStatus[index]){pokemonName=`<span style="color: red;">Shiny</span> ` + pokemonName;}const listItem=document.createElement('div'); listItem.className='pokemon-item'; listItem.innerHTML=`<strong>${pokemonName}</strong> (Level ${pokemonInfo.level || 'Unknown'})`; const details=document.createElement('div'); details.className='pokemon-details'; let itemToDisplay=pokemonInfo.items.length > 0 ? pokemonInfo.items[0] : 'No items'; let movesToDisplay=pokemonInfo.roles[Object.keys(pokemonInfo.roles)[0]].moves.slice(0, 4); if (hasRestrictedMove(movesToDisplay)){if (restrictedItems.includes(itemToDisplay)){itemToDisplay='Leftovers';}}movesToDisplay=filterPhysicalMoves(movesToDisplay, itemToDisplay); movesToDisplay=filterSpecialMoves(movesToDisplay, itemToDisplay); details.innerHTML +=`<p><strong>Item:</strong> ${itemToDisplay}</p>`; details.innerHTML +=`<p><strong>Moves:</strong> ${movesToDisplay.join(', ')}</p>`; const firstRole=Object.values(pokemonInfo.roles)[0]; const teraTypes=firstRole.teraTypes || ['No Tera Type']; const teraType=teraTypes.length > 0 ? teraTypes[0] : 'No Tera Type'; details.innerHTML +=`<p><strong>Tera Type:</strong> ${teraType}</p>`; if (Object.keys(pokemonInfo.roles).length > 0){const role=Object.keys(pokemonInfo.roles)[0]; const roleDetails=pokemonInfo.roles[role]; details.innerHTML +=`<p><strong>Abilities:</strong> ${roleDetails.abilities.join(', ')}</p>`;}listItem.appendChild(details); pokemonList.appendChild(listItem);});}function convertToShowdown(){const showdownTextArea=document.getElementById('showdownText'); let showdownText=""; selectedPokemon.forEach((pokemon, index)=>{const pokemonInfo=pokemonData[pokemon]; const selectedRole=Object.values(pokemonInfo.roles)[0]; let item=pokemonInfo.items[0] || 'Leftovers'; const ability=selectedRole.abilities[0] || 'Unknown Ability'; const level=pokemonInfo.level || 100; const moves=selectedRole.moves.slice(0, 4); if (hasRestrictedMove(moves) && restrictedItems.includes(item)){item='Leftovers';}const teraTypes=selectedRole.teraTypes || []; const teraType=teraTypes.length > 0 ? teraTypes[0] : ''; showdownText +=`${pokemon.replace('<span style="color: red;">Shiny</span> ', '')}@ ${item}\n`; showdownText +=`Ability: ${ability}\n`; showdownText +=`Level: ${level}\n`; showdownText +=`EVs: 84 HP / 84 Atk / 84 Def / 84 SpA / 84 SpD / 84 Spe\n`; if (shinyStatus[index]){showdownText +=`Shiny: Yes\n`;}if (teraType){showdownText +=`Tera Type: ${teraType}\n`;}for (let i=0; i < 4; i++){const move=selectedRole.moves[i] || `Move ${i + 1}`; showdownText +=`- ${move}\n`;}showdownText +=`\n`;}); showdownTextArea.value=showdownText;}</script></body></html>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Pokémon Selector</title>
+    <style>
+
+	      #mainContent {
+            display: none; 
+        }
+		
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        .pokemon-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            justify-content: center;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .pokemon-item {
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            background-color: #f9f9f9;
+        }
+
+        .pokemon-item strong {
+            font-size: 20px;
+        }
+
+        .pokemon-details {
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .custom-file-label {
+            background-color: #008CBA;
+            color: white;
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .custom-file-label:hover {
+            background-color: #007B9A;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+        }
+
+        .file-input-wrapper {
+            margin-bottom: 20px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 200px;
+            margin-top: 20px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            resize: none;
+        }
+    </style>
+	
+</head>
+<body>
+    
+    <h1>Random Pokémon Selector</h1>
+
+    <div class="file-input-wrapper">
+        <label class="custom-file-label" for="fileInput1">Upload Pokémon Data 1</label>
+        <input type="file" id="fileInput1" accept=".json">
+    </div>
+    <div class="file-input-wrapper">
+        <label class="custom-file-label" for="fileInput2">Upload Pokémon Data 2</label>
+        <input type="file" id="fileInput2" accept=".json">
+    </div>
+ 
+
+    <button onclick="selectRandomPokemon()">Select 6 Random Pokémon</button>
+    <button onclick="convertToShowdown()">Convert to Pokémon Showdown Format</button>
+
+    <div id="pokemonList" class="pokemon-grid"></div>
+
+    <textarea id="showdownText" readonly></textarea>
+
+    <script>
+        let pokemonData = {};
+        let selectedPokemon = [];
+        let shinyStatus = []; 
+
+        const restrictedMoves = [
+    "Acid Armor", "Acupressure", "After You", "Agility", 
+    "Ally Switch", "Amnesia", "Aqua Ring", "Aromatherapy", 
+    "Aromatic Mist", "Assist", "Attract", "Aurora Veil", 
+    "Autotomize", "Baby-Doll Eyes", "Baneful Bunker", "Barrier", 
+    "Baton Pass", "Belly Drum", "Bestow", "Block", 
+    "Bulk Up", "Burning Bulwark", "Calm Mind", "Camouflage", 
+    "Captivate", "Celebrate", "Charge", "Charm", 
+    "Chilly Reception", "Clangorous Soul", "Coaching", "Coil", 
+    "Confide", "Confuse Ray", "Conversion", "Conversion 2", 
+    "Copycat", "Corrosive Gas", "Cosmic Power", "Cotton Guard", 
+    "Cotton Spore", "Court Change", "Crafty Shield", "Curse", 
+    "Dark Void", "Decorate", "Defend Order", "Defense Curl", 
+    "Defog", "Detect", "Disable", 
+    "Doodle", "Double Team", "Dragon Cheer", "Dragon Dance", 
+    "Eerie Impulse", "Electric Terrain", "Electrify", "Embargo", 
+    "Encore", "Endure", "Entrainment", "Excavate", 
+    "Extreme Evoboost", "Fairy Lock", "Fake Tears", "Feather Dance", 
+    "Fillet Away", "Flash", "Flatter", "Floral Healing", 
+    "Flower Shield", "Focus Energy", "Follow Me", "Foresight", 
+    "Forest's Curse", "Gastro Acid", "Gear Up", "Geomancy", 
+    "Glare", "Grass Whistle", "Grassy Terrain", "Gravity", 
+    "Growl", "Growth", "Grudge", "Guard Split", 
+    "Guard Swap", "Hail", "Happy Hour", "Harden", 
+    "Haze", "Heal Bell", "Heal Block", "Heal Order", 
+    "Heal Pulse", "Healing Wish", "Heart Swap", "Helping Hand", 
+    "Hold Hands", "Hone Claws", "Howl", "Hypnosis", 
+    "Imprison", "Ingrain", "Instruct", "Ion Deluge", 
+    "Iron Defense", "Jungle Healing", "Kinesis", "King's Shield", 
+    "Laser Focus", "Leech Seed", "Leer", "Life Dew", 
+    "Light Screen", "Lock-On", "Lovely Kiss", "Lucky Chant", 
+    "Lunar Blessing", "Lunar Dance", "Magic Coat", "Magic Powder", 
+    "Magic Room", "Magnet Rise", "Magnetic Flux", "Mat Block", 
+    "Max Guard", "Max Spirit", "Me First", "Mean Look", 
+    "Meditate", "Memento", "Metal Sound", "Metronome", 
+    "Milk Drink", "Mimic", "Mind Reader", "Minimize", 
+    "Miracle Eye", "Mirror Move", "Mist", "Misty Terrain", 
+    "Moonlight", "Morning Sun", "Mud Sport", "Nasty Plot", 
+    "Nature Power", "Nightmare", "No Retreat", "Noble Roar", 
+    "Obstruct", "Octolock", "Odor Sleuth", "Pain Split", 
+    "Parting Shot", "Perish Song", "Play Nice", "Poison Gas", 
+    "Poison Powder", "Powder", "Power Shift", "Power Split", 
+    "Power Swap", "Power Trick", "Protect", "Psych Up", 
+    "Psychic Terrain", "Psycho Shift", "Purify", "Quash", 
+    "Quick Guard", "Quiver Dance", "Rage Powder", "Rain Dance", 
+    "Recover", "Recycle", "Reflect", "Reflect Type", 
+    "Refresh", "Rest", "Revival Blessing", "Roar", 
+    "Rock Polish", "Role Play", "Roost", "Rototiller", 
+    "Safeguard", "Sand Attack", "Sandstorm", "Scary Face", 
+    "Screech", "Shadow Down", "Shadow Half", "Shadow Hold", 
+    "Shadow Mist", "Shadow Panic", "Shadow Shed", "Shadow Sky", 
+    "Sharpen", "Shed Tail", "Shell Smash", "Shelter", 
+    "Shift Gear", "Shore Up", "Silk Trap", "Simple Beam", 
+    "Sing", "Sketch", "Skill Swap", "Slack Off", 
+    "Sleep Powder", "Sleep Talk", "Smokescreen", "Snatch", 
+    "Snowscape", "Soak", "Soft-Boiled", "Speed Swap", 
+    "Spicy Extract", "Spider Web", "Spikes", "Spiky Shield", 
+    "Spite", "Splash", "Spore", "Spotlight", 
+    "Stealth Rock", "Sticky Web", "Stockpile", "Strength Sap", 
+    "String Shot", "Stuff Cheeks", "Stun Spore", "Substitute", 
+    "Sunny Day", "Supersonic", "Swagger", "Swallow", 
+    "Sweet Kiss", "Sweet Scent", "Swords Dance", 
+    "Synthesis", "Tail Glow", "Tail Whip", "Tailwind", 
+    "Take Heart", "Tar Shot", "Taunt", "Tearful Look", 
+    "Teatime", "Teeter Dance", "Telekinesis", "Teleport", 
+    "Thunder Wave", "Tickle", "Tidy Up", "Topsy-Turvy", 
+    "Torment", "Toxic", "Toxic Spikes", "Toxic Thread", 
+    "Transform", "Trick", "Trick Room", "Trick-or-Treat", 
+    "Venom Drench", "Victory Dance", "Water Sport", "Whirlwind", 
+    "Wide Guard", "Will-O-Wisp", "Wish", "Withdraw", 
+    "Wonder Room", "Work Up", "Worry Seed", "Yawn"
+];
+
+
+        const restrictedItems = ["Choice Specs", "Choice Band", "Choice Scarf", "Assault Vest"];  
+         
+        const physicalMoves = [
+    "Accelerock", "Acrobatics", "Aerial Ace", "Anchor Shot", "Aqua Cutter", 
+    "Aqua Jet", "Aqua Step", "Aqua Tail", "Arm Thrust", "Assurance", 
+    "Astonish", "Attack Order", "Aura Wheel", "Avalanche", "Axe Kick",
+    "Barb Barrage", "Barrage", "Beak Blast", "Beat Up", "Behemoth Bash", 
+    "Behemoth Blade", "Bide", "Bind", "Bite", "Bitter Blade", 
+    "Blaze Kick", "Blazing Torque", "Body Press", "Body Slam", 
+    "Bolt Beak", "Bolt Strike", "Bone Club", "Bone Rush", 
+    "Bonemerang", "Bounce", "Branch Poke", "Brave Bird", 
+    "Breaking Swipe", "Brick Break", "Brutal Swing", "Bug Bite", 
+    "Bulldoze", "Bullet Punch", "Bullet Seed", "Catastropika", 
+    "Ceaseless Edge", "Chip Away", "Circle Throw", "Clamp", 
+    "Close Combat", "Collision Course", "Combat Torque", "Comet Punch", 
+    "Comeuppance", "Constrict", "Counter", "Covet", "Crabhammer", 
+    "Cross Chop", "Cross Poison", "Crunch", "Crush Claw", 
+    "Crush Grip", "Cut", "Darkest Lariat", "Diamond Storm", 
+    "Dig", "Dire Claw", "Dive", "Dizzy Punch", "Double Hit", 
+    "Double Iron Bash", "Double Kick", "Double Shock", "Double Slap", 
+    "Double-Edge", "Dragon Ascent", "Dragon Claw", "Dragon Darts", 
+    "Dragon Hammer", "Dragon Rush", "Dragon Tail", "Drain Punch", 
+    "Drill Peck", "Drill Run", "Drum Beating", "Dual Chop", 
+    "Dual Wingbeat", "Dynamic Punch", "Earthquake", "Egg Bomb", 
+    "Endeavor", "Explosion", "Extreme Speed", "Facade", 
+    "Fake Out", "False Surrender", "False Swipe", "Feint", 
+    "Feint Attack", "Fell Stinger", "Fire Fang", "Fire Lash", 
+    "Fire Punch", "First Impression", "Fishious Rend", "Fissure", 
+    "Flail", "Flame Charge", "Flame Wheel", "Flare Blitz", 
+    "Fling", "Flip Turn", "Floaty Fall", "Flower Trick", 
+    "Fly", "Flying Press", "Focus Punch", "Force Palm", 
+    "Foul Play", "Freeze Shock", "Frustration", "Fury Attack", 
+    "Fury Cutter", "Fury Swipes", "Fusion Bolt", "Gear Grind", 
+    "Giga Impact", "Gigaton Hammer", "Glacial Lance", "Glaive Rush", 
+    "Grassy Glide", "Grav Apple", "Guillotine", "Gunk Shot", 
+    "Gyro Ball", "Hammer Arm", "Hard Press", "Head Charge", 
+    "Head Smash", "Headbutt", "Headlong Rush", "Heart Stamp", 
+    "Heat Crash", "Heavy Slam", "High Horsepower", "High Jump Kick", 
+    "Hold Back", "Horn Attack", "Horn Drill", "Horn Leech", 
+    "Hyper Drill", "Hyper Fang", "Hyperspace Fury", "Ice Ball", 
+    "Ice Fang", "Ice Hammer", "Ice Punch", "Ice Shard", 
+    "Ice Spinner", "Icicle Crash", "Icicle Spear", "Iron Head", 
+    "Iron Tail", "Ivy Cudgel", "Jaw Lock", "Jet Punch", 
+    "Jump Kick", "Karate Chop", "Knock Off", "Kowtow Cleave", 
+    "Land's Wrath", "Lash Out", "Last Resort", "Last Respects", 
+    "Leaf Blade", "Leafage", "Leech Life", "Let's Snuggle Forever", 
+    "Lick", "Liquidation", "Low Kick", "Low Sweep", "Lunge", 
+    "Mach Punch", "Magical Torque", "Magnet Bomb", "Magnitude", 
+    "Malicious Moonsault", "Mega Kick", "Mega Punch", "Megahorn", 
+    "Metal Burst", "Metal Claw", "Meteor Assault", "Meteor Mash", 
+    "Mighty Cleave", "Mortal Spin", "Mountain Gale", "Multi-Attack", 
+    "Natural Gift", "Needle Arm", "Night Slash", "Noxious Torque", 
+    "Nuzzle", "Order Up", "Outrage", "Pay Day", "Payback", 
+    "Peck", "Petal Blizzard", "Phantom Force", "Pin Missile", 
+    "Plasma Fists", "Play Rough", "Pluck", "Poison Fang", 
+    "Poison Jab", "Poison Sting", "Poison Tail", "Poltergeist", 
+    "Population Bomb", "Pounce", "Pound", "Power Trip", 
+    "Power Whip", "Power-Up Punch", "Precipice Blades", "Present", 
+    "Psyblade", "Psychic Fangs", "Psycho Cut", "Psyshield Bash", 
+    "Pulverizing Pancake", "Punishment", "Pursuit", "Pyro Ball", 
+    "Quick Attack", "Rage", "Rage Fist", "Raging Bull", 
+    "Raging Fury", "Rapid Spin", "Razor Leaf", "Razor Shell", 
+    "Retaliate", "Return", "Revenge", "Reversal", "Rock Blast", 
+    "Rock Climb", "Rock Slide", "Rock Smash", "Rock Throw", 
+    "Rock Tomb", "Rock Wrecker", "Rolling Kick", "Rollout", 
+    "Sacred Fire", "Sacred Sword", "Salt Cure", "Sand Tomb", 
+    "Sappy Seed", "Scale Shot", "Scratch", "Searing Sunraze Smash", 
+    "Secret Power", "Seed Bomb", "Seismic Toss", "Self-Destruct", 
+    "Shadow Blast", "Shadow Blitz", "Shadow Bone", "Shadow Break", 
+    "Shadow Claw", "Shadow End", "Shadow Force", "Shadow Punch", 
+    "Shadow Rush", "Shadow Sneak", "Sinister Arrow Raid", "Sizzly Slide", 
+    "Skitter Smack", "Skull Bash", "Sky Attack", "Sky Drop", 
+    "Sky Uppercut", "Slam", "Slash", "Smack Down", 
+    "Smart Strike", "Smelling Salts", "Snap Trap", "Solar Blade", 
+    "Soul-Stealing 7-Star Strike", "Spark", "Spectral Thief", 
+    "Spike Cannon", "Spin Out", "Spin Slash", "Spirit Break", 
+    "Spirit Shackle", "Splintered Stormshards", "Steamroller", 
+    "Steel Roller", "Steel Wing", "Stomp", "Stomping Tantrum", 
+    "Stone Axe", "Stone Edge", "Storm Throw", "Strength", 
+    "Struggle", "Submission", "Sucker Punch", "Sunsteel Strike", 
+    "Super Fang", "Supercell Slam", "Superpower", "Surging Strikes", 
+    "Tackle", "Tail Slap", "Take Down", "Temper Flare", 
+    "Thief", "Thousand Arrows", "Thousand Waves", "Thrash", 
+    "Throat Chop", "Thunder Fang", "Thunder Punch", "Thunderous Kick", 
+    "Trailblaze", "Triple Arrows", "Triple Axel", "Triple Dive", 
+    "Triple Kick", "Trop Kick", "Twineedle", "U-turn", 
+    "Upper Hand", "V-create", "Veevee Volley", "Vine Whip", 
+    "Vise Grip", "Vital Throw", "Volt Tackle", "Wake-Up Slap", 
+    "Waterfall", "Wave Crash", "Wicked Blow", "Wicked Torque", 
+    "Wide Slash", "Wild Charge", "Wing Attack", "Wood Hammer", 
+    "Wrap", "X-Scissor", "Zen Headbutt", "Zing Zap", "Zippy Zap"
+];
+
+const specialMoves = [
+    "10,000,000 Volt Thunderbolt", "Absorb", "Acid", "Acid Spray", 
+    "Aeroblast", "Air Cutter", "Air Slash", "Alluring Voice", 
+    "Ancient Power", "Apple Acid", "Armor Cannon", "Astral Barrage", 
+    "Aura Sphere", "Aurora Beam", "Baddy Bad", "Belch", 
+    "Bitter Malice", "Blast Burn", "Bleakwind Storm", "Blizzard", 
+    "Blood Moon", "Blue Flare", "Boomburst", "Bouncy Bubble", 
+    "Brine", "Bubble", "Bubble Beam", "Bug Buzz", "Burn Up", 
+    "Burning Jealousy", "Buzzy Buzz", "Charge Beam", "Chatter", 
+    "Chilling Water", "Chloroblast", "Clanging Scales", "Clangorous Soulblaze", 
+    "Clear Smog", "Confusion", "Core Enforcer", "Dark Pulse", 
+    "Dazzling Gleam", "Disarming Voice", "Discharge", "Doom Desire", 
+    "Draco Meteor", "Dragon Breath", "Dragon Energy", "Dragon Pulse", 
+    "Dragon Rage", "Draining Kiss", "Dream Eater", "Dynamax Cannon", 
+    "Earth Power", "Echoed Voice", "Eerie Spell", "Electro Ball", 
+    "Electro Drift", "Electro Shot", "Electroweb", "Ember", 
+    "Energy Ball", "Eruption", "Esper Wing", "Eternabeam", 
+    "Expanding Force", "Extrasensory", "Fairy Wind", "Fickle Beam", 
+    "Fiery Dance", "Fiery Wrath", "Final Gambit", "Fire Blast", 
+    "Fire Pledge", "Fire Spin", "Flame Burst", "Flamethrower", 
+    "Flash Cannon", "Fleur Cannon", "Focus Blast", "Freeze-Dry", 
+    "Freezing Glare", "Freezy Frost", "Frenzy Plant", "Frost Breath", 
+    "Fusion Flare", "Future Sight", "Genesis Supernova", "Giga Drain", 
+    "Glaciate", "Glitzy Glow", "Grass Knot", "Grass Pledge", 
+    "Guardian of Alola", "Gust", "Heat Wave", "Hex", 
+    "Hidden Power", "Hurricane", "Hydro Cannon", "Hydro Pump", 
+    "Hydro Steam", "Hyper Beam", "Hyper Voice", "Hyperspace Hole", 
+    "Ice Beam", "Ice Burn", "Icy Wind", "Incinerate", 
+    "Infernal Parade", "Inferno", "Infestation", "Judgment", 
+    "Lava Plume", "Leaf Storm", "Leaf Tornado", "Light of Ruin", 
+    "Light That Burns the Sky", "Lumina Crash", "Luster Purge", 
+    "Magical Leaf", "Magma Storm", "Make It Rain", "Malignant Chain", 
+    "Matcha Gotcha", "Mega Drain", "Menacing Moonraze Maelstrom", 
+    "Meteor Beam", "Mind Blown", "Mirror Coat", "Mirror Shot", 
+    "Mist Ball", "Misty Explosion", "Moonblast", "Moongeist Beam", 
+    "Mud Bomb", "Mud Shot", "Mud-Slap", "Muddy Water", 
+    "Mystical Fire", "Mystical Power", "Nature's Madness", "Night Daze", 
+    "Night Shade", "Oblivion Wing", "Oceanic Operetta", "Octazooka", 
+    "Ominous Wind", "Origin Pulse", "Overdrive", "Overheat", 
+    "Parabolic Charge", "Petal Dance", "Photon Geyser", "Pika Papow", 
+    "Pollen Puff", "Powder Snow", "Power Gem", "Prismatic Laser", 
+    "Psybeam", "Psychic", "Psychic Noise", "Psycho Boost", 
+    "Psyshock", "Psystrike", "Psywave", "Razor Wind", 
+    "Relic Song", "Revelation Dance", "Rising Voltage", "Roar of Time", 
+    "Round", "Ruination", "Sandsear Storm", "Scald", 
+    "Scorching Sands", "Searing Shot", "Secret Sword", "Seed Flare", 
+    "Shadow Ball", "Shadow Bolt", "Shadow Chill", "Shadow Fire", 
+    "Shadow Rave", "Shadow Storm", "Shadow Wave", "Sheer Cold", 
+    "Shell Side Arm", "Shell Trap", "Shock Wave", "Signal Beam", 
+    "Silver Wind", "Sludge", "Sludge Bomb", "Sludge Wave", 
+    "Smog", "Snarl", "Snipe Shot", "Snore", 
+    "Solar Beam", "Sonic Boom", "Spacial Rend", "Sparkling Aria", 
+    "Sparkly Swirl", "Spit Up", "Splishy Splash", "Springtide Storm", 
+    "Steam Eruption", "Steel Beam", "Stoked Sparksurfer", "Stored Power", 
+    "Strange Steam", "Struggle Bug", "Surf", "Swift", 
+    "Synchronoise", "Syrup Bomb", "Tachyon Cutter", "Techno Blast", 
+    "Tera Blast", "Tera Starstorm", "Terrain Pulse", "Thunder", 
+    "Thunder Cage", "Thunder Shock", "Thunderbolt", "Thunderclap", 
+    "Torch Song", "Tri Attack", "Trump Card", "Twin Beam", 
+    "Twister", "Uproar", "Vacuum Wave", "Vacuum-Cut", 
+    "Venoshock", "Volt Switch", "Water Gun", "Water Pledge", 
+    "Water Pulse", "Water Shuriken", "Water Spout", "Weather Ball", 
+    "Whirlpool", "Wildbolt Storm", "Wring Out", "Zap Cannon"
+];
+
+    const encodedPassword = "YWhtZWRpc2hvdA=="; 
+
+        function checkPassword() {
+            const password = atob(encodedPassword); 
+            let userPassword;
+
+            // Keep prompting for the password until the correct one is entered
+            while (true) {
+                userPassword = prompt("Enter the password to access the Pokémon Selector:");
+                
+                if (userPassword === null) {
+                    // User pressed Cancel; stay in the loop to prompt again
+                    // Optionally you can add a message to inform the user
+                    alert("You need to enter a password to continue."); 
+                    continue; // Go back to the start of the loop
+                }
+                
+                if (userPassword === password) {
+                    // If the password is correct, show the main content
+                    document.getElementById("mainContent").style.display = "block"; 
+                    break; // Exit the loop
+                } else {
+                    alert("Incorrect password. Try again.");
+                }
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", checkPassword);
+
+        document.getElementById('fileInput1').addEventListener('change', handleFileSelect, false);
+        document.getElementById('fileInput2').addEventListener('change', handleFileSelect, false);
+
+function handleFileSelect(event) {
+    const file = event.target.files[0];
+    const reader = new FileReader();
+    
+    reader.onload = function(e) {
+        const jsonData = JSON.parse(e.target.result);
+        
+        if (event.target.id === 'fileInput1' || event.target.id === 'fileInput2') {
+          
+            Object.assign(pokemonData, jsonData);
+            for (const pokemonName in jsonData) {
+                if (pokemonData[pokemonName]) {
+                   
+                    const randbatsSet = jsonData[pokemonName];
+                   
+                    if (randbatsSet.items) {
+                       
+                        pokemonData[pokemonName].items = randbatsSet.items;
+                    }
+                }
+            }
+        }
+    };
+    
+    reader.readAsText(file);
+}
+
+function hasRestrictedMove(moves) {
+        return moves.some(move => restrictedMoves.includes(move));
+    }
+
+
+        function shouldSkipPokemon(pokemonInfo) {
+            return pokemonInfo.doublesLevel || pokemonInfo.doublesMoves;
+        }
+
+        function selectRandomFromArray(arr, n) {
+            let result = [];
+            let usedIndices = new Set();
+
+            while (result.length < n && usedIndices.size < arr.length) {
+                const randomIndex = Math.floor(Math.random() * arr.length);
+                if (!usedIndices.has(randomIndex)) {
+                    result.push(arr[randomIndex]);
+                    usedIndices.add(randomIndex);
+                }
+            }
+            return result;
+        }
+
+        function isShiny() {
+            return Math.random() < 1 / 2000; 
+        }
+
+        function filterPhysicalMoves(pokemonMoves, item) {
+        if (item === "Choice Band") {
+            return pokemonMoves.filter(move => physicalMoves.includes(move)); 
+        }
+        return pokemonMoves; 
+    }
+
+    function filterSpecialMoves(pokemonMoves, item) {
+        if (item === "Choice Specs") {
+            return pokemonMoves.filter(move => specialMoves.includes(move)); 
+        }
+        return pokemonMoves; 
+    }
+
+    function selectRandomPokemon() {
+        const pokemonKeys = Object.keys(pokemonData);
+        if (pokemonKeys.length < 6) {
+            alert("Please upload all required files and ensure they have sufficient Pokémon data.");
+            return;
+        }
+    selectedPokemon = [];
+    shinyStatus = [];
+    const pokemonList = document.getElementById('pokemonList');
+    pokemonList.innerHTML = '';
+
+    while (selectedPokemon.length < 6) {
+        const randomIndex = Math.floor(Math.random() * pokemonKeys.length);
+        const randomPokemon = pokemonKeys[randomIndex];
+        const pokemonInfo = pokemonData[randomPokemon];
+
+        if (!selectedPokemon.includes(randomPokemon) && !shouldSkipPokemon(pokemonInfo)) {
+            selectedPokemon.push(randomPokemon);
+            shinyStatus.push(isShiny());
+        }
+    }
+
+    selectedPokemon.forEach((pokemon, index) => {
+        const pokemonInfo = pokemonData[pokemon];
+        let pokemonName = pokemon;
+
+        if (shinyStatus[index]) {
+            pokemonName = `<span style="color: red;">Shiny</span> ` + pokemonName;
+        }
+
+        const listItem = document.createElement('div');
+        listItem.className = 'pokemon-item';
+        listItem.innerHTML = `<strong>${pokemonName}</strong> (Level ${pokemonInfo.level || 'Unknown'})`;
+
+        const details = document.createElement('div');
+        details.className = 'pokemon-details';
+
+        let itemToDisplay = pokemonInfo.items.length > 0 ? pokemonInfo.items[0] : 'No items';
+            let movesToDisplay = pokemonInfo.roles[Object.keys(pokemonInfo.roles)[0]].moves.slice(0, 4); 
+
+            if (hasRestrictedMove(movesToDisplay)) {
+                if (restrictedItems.includes(itemToDisplay)) {
+                    itemToDisplay = 'Leftovers';
+                }
+            }
+            movesToDisplay = filterPhysicalMoves(movesToDisplay, itemToDisplay); 
+            movesToDisplay = filterSpecialMoves(movesToDisplay, itemToDisplay);  
+
+            details.innerHTML += `<p><strong>Item:</strong> ${itemToDisplay}</p>`;
+            details.innerHTML += `<p><strong>Moves:</strong> ${movesToDisplay.join(', ')}</p>`;
+            
+    
+
+       
+        const firstRole = Object.values(pokemonInfo.roles)[0];
+        const teraTypes = firstRole.teraTypes || ['No Tera Type']; 
+        const teraType = teraTypes.length > 0 ? teraTypes[0] : 'No Tera Type';
+        details.innerHTML += `<p><strong>Tera Type:</strong> ${teraType}</p>`;
+
+        if (Object.keys(pokemonInfo.roles).length > 0) {
+            const role = Object.keys(pokemonInfo.roles)[0];
+            const roleDetails = pokemonInfo.roles[role];
+
+            details.innerHTML += `<p><strong>Abilities:</strong> ${roleDetails.abilities.join(', ')}</p>`;
+
+        }
+
+        listItem.appendChild(details);
+        pokemonList.appendChild(listItem);
+    });
+}
+
+function convertToShowdown() {
+    const showdownTextArea = document.getElementById('showdownText');
+    let showdownText = "";
+
+    selectedPokemon.forEach((pokemon, index) => {
+        const pokemonInfo = pokemonData[pokemon];
+        const selectedRole = Object.values(pokemonInfo.roles)[0]; 
+        let item = pokemonInfo.items[0] || 'Leftovers'; 
+        const ability = selectedRole.abilities[0] || 'Unknown Ability';
+        const level = pokemonInfo.level || 100;
+
+        
+        const moves = selectedRole.moves.slice(0, 4); 
+        if (hasRestrictedMove(moves) && restrictedItems.includes(item)) {
+            item = 'Leftovers'; 
+        }
+
+       
+        const teraTypes = selectedRole.teraTypes || [];
+        const teraType = teraTypes.length > 0 ? teraTypes[0] : ''; 
+
+        showdownText += `${pokemon.replace('<span style="color: red;">Shiny</span> ', '')} @ ${item}\n`;
+        showdownText += `Ability: ${ability}\n`;
+        showdownText += `Level: ${level}\n`;
+
+        
+        showdownText += `EVs: 84 HP / 84 Atk / 84 Def / 84 SpA / 84 SpD / 84 Spe\n`;
+
+        if (shinyStatus[index]) {
+            showdownText += `Shiny: Yes\n`;
+        }
+
+        if (teraType) {
+            showdownText += `Tera Type: ${teraType}\n`;
+        }
+
+       
+        for (let i = 0; i < 4; i++) {
+            const move = selectedRole.moves[i] || `Move ${i + 1}`;
+            showdownText += `- ${move}\n`;
+        }
+
+        showdownText += `\n`;
+    });
+
+    showdownTextArea.value = showdownText; 
+}
+
+
+
+</script>
+
+</body>
+</html>
